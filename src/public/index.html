@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dishes</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <h1>dishes</h1>
+  <table id="dishes-table" border="1">
+    <tr>
+      <th>Name</th>
+      <th>Ingerdients</th>
+      <th>Preparation Steps</th>
+      <th>Cooking Time</th>
+      <th>Origin</th>
+      <th>Spice Level</th>
+    </tr>
+  </table>
+
+  <script>
+    fetch('/api/dishes')
+      .then(res => res.json())
+      .then(data => {
+        const table = document.getElementById('dishes-table');
+        data.forEach(dish => {
+          const row = table.insertRow();
+          row.innerHTML = `<td>${dish.name}</td><td>${dish.ingredients}</td><td>${dish.preparationSteps}</td><td>${dish.cookingTime}</td><td>${dish.origin}</td><td>${dish.spice}</td>`;
+        });
+      });
+  </script>
+
+
+</body>
+</html>

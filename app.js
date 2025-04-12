@@ -1,14 +1,30 @@
-import { app } from "./src/express.js"
-import { connectDB } from "./src/database.js"
+import express from "express"
+import { connectDB } from "./src/config/database.js"
+import { router } from "./src/routes/router.js"
+import path from "path"
+import { fileURLToPath } from "url";
 
 connectDB()
 
-const server = app.listen(process.env.PORT || 3000, () => {
-  console.log("Listenning on port 3000")
+export const app = express()
+app.use(express.json())
+app.use(router)
+
+// Compute __filename and __dirname
+const FILENAME = fileURLToPath(import.meta.url);
+const DIRNAME =  path.dirname(FILENAME);
+app.get("/", (req, res) => {
+  res.sendFile(path.join(DIRNAME , 'src', 'public', 'index.html'))
 })
+
+const port = process.env.PORT || 5000
+const server = app.listen(port, () => {
+  console.log(`Listening on port ${port}`)
+})
+
 async function shutdown () {
   server.close()
-  db.exit()
+  process.exit(0)
 }
 
 process.on('SIGINT', shutdown)
