@@ -1,34 +1,163 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Dishes</title>
-  <link rel="stylesheet" href="style.css"/>
-</head>
-<body>
-  <h1>dishes</h1>
-  <table id="dishes-table" border="1">
-    <tr>
-      <th>Name</th>
-      <th>Ingerdients</th>
-      <th>Preparation Steps</th>
-      <th>Cooking Time</th>
-      <th>Origin</th>
-      <th>Spice Level</th>
-    </tr>
-  </table>
+  <head>
+    <title>Dishes</title>
+  </head>
+  <style>
+    #modal {
+      display:none;
+    }
 
-  <script>
+    #modal.active {
+      display: block;
+      position: absolute;
+      margin: 20px;
+      padding: 20px;
+      background-color: white;
+      z-index: 10040;
+    }
+    #modal.active * {
+      display: block;
+  }
+  
+  </style>
+  <body>
+    <h1>dishes</h1>
+    <button onclick="showDishForm()">Add a dish</button>
+    <div id="modal">
+      <form id="postForm">
+        <label for="name">Name</label>
+        <input type="text" name="name">
+        <label for="ingredients">ingredients</label>
+        <input type="text" name="ingredients">
+        <label for="preparationSteps">preparationSteps</label>
+        <input type="text" name="preparationSteps">
+        <label for="cookingTime">cookingTime</label>
+        <input type="text" name="cookingTime">
+
+        <label for="origin">origin</label>
+        <input type="text" name="origin">
+
+        <label for="spice">spice</label>
+        <input type="text" name="spice">
+
+        <button type="submit">Post dish</button>
+      </form>
+    </div>
+
+    <table id="dishes-table" border="1">
+      <tr>
+        <th>Name</th>
+        <th>Ingerdients</th>
+        <th>Preparation Steps</th>
+        <th>Cooking Time</th>
+        <th>Origin</th>
+        <th>Spice Level</th>
+      </tr>
+    </table>
+
+    <script>
+    function showDishForm() {
+      const modal = document.getElementById("modal")
+      modal.classList.add("active")
+    }
+
+    const form = document.getElementById("postForm")
+    form.addEventListener("submit", (event) => {
+      event.preventDefault()
+
+      // create a object with all characteristics
+      const formData = new FormData(event.target);
+      const newDish = Object.fromEntries(formData.entries());
+
+      fetch(`api/dishes`, {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newDish)
+      })
+        .then(res => {
+          if (res.ok) return res.json() 
+          throw new Error("Error while posting dish")
+        })
+        .then(data => {
+          console.log(data)
+          alert("Posted Dish!")
+          window.location.reload()
+        })
+        .catch(err => {
+          alert("Failed to post the dish, if not already try adding a name")
+          console.error(err)
+        })
+    })
+
+    function deleteEntry(id) {
+      console.log("hello")
+      if (confirm("Do you really want to delete this row?")) {
+        fetch(`api/dishes/${id}`, {
+          method: 'DELETE'
+        })
+          .then(res => {
+            if (!res.ok) {
+              throw new Error("Delete failed")
+            } 
+            window.location.reload();
+            return res.json()
+          })
+      }
+    }
+
+    function updateEntry(id) {
+      const row = document.getElementById(`row-${id}`);
+      const cells = row.querySelectorAll("td");
+
+      // Replace text with input fields
+      const fields = ["name", "ingredients", "preparationSteps", "cookingTime", "origin", "spice"];
+      fields.forEach((field, i) => {
+        const value = cells[i].innerText;
+        cells[i].innerHTML = `<input value="${value}" id="${field}-${id}" />`;
+      });
+
+      cells[6].innerHTML = `<button onclick="submitUpdate('${id}')">Save</button>`;
+    }
+
+    function submitUpdate(id) {
+      const updatedRecipe = {
+        name: document.getElementById(`name-${id}`).value,
+        ingredients: document.getElementById(`ingredients-${id}`).value,
+        preparationSteps: document.getElementById(`preparationSteps-${id}`).value,
+        cookingTime: document.getElementById(`cookingTime-${id}`).value,
+        origin: document.getElementById(`origin-${id}`).value,
+        spice: document.getElementById(`spice-${id}`).value
+      };
+
+      fetch(`/api/dishes/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatedRecipe)
+      })
+        .then(res => res.json())
+        .then(() => {
+          alert("Recipe updated!");
+          window.location.reload();
+        })
+        .catch(err => console.error(err));
+    }
+
     fetch('/api/dishes')
       .then(res => res.json())
       .then(data => {
         const table = document.getElementById('dishes-table');
         data.forEach(dish => {
           const row = table.insertRow();
-          row.innerHTML = `<td>${dish.name}</td><td>${dish.ingredients}</td><td>${dish.preparationSteps}</td><td>${dish.cookingTime}</td><td>${dish.origin}</td><td>${dish.spice}</td>`;
+          row.id = `row-${dish._id}`
+          row.innerHTML = `<td>${dish.name}</td><td>${dish.ingredients}</td><td>${dish.preparationSteps}</td><td>${dish.cookingTime}</td><td>${dish.origin}</td><td>${dish.spice}</td><td><button onclick="deleteEntry('${dish._id}')">Delete</button><button onclick="updateEntry('${dish._id}')">Update</button></td>`;
         });
       });
-  </script>
+
+    </script>
 
 
-</body>
+  </body>
 </html>
